@@ -1,0 +1,109 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d1117"/>
+      <stop offset="100%" style="stop-color:#161b22"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#58a6ff"/>
+      <stop offset="100%" style="stop-color:#79c0ff"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+
+  <!-- Decorative circles -->
+  <circle cx="100" cy="100" r="200" fill="#58a6ff" opacity="0.05"/>
+  <circle cx="1100" cy="530" r="250" fill="#79c0ff" opacity="0.05"/>
+
+  <!-- Sudoku Grid Preview -->
+  <g transform="translate(650, 115)">
+    <!-- Grid background -->
+    <rect x="0" y="0" width="400" height="400" rx="10" fill="#21262d" stroke="#58a6ff" stroke-width="3"/>
+
+    <!-- Grid lines -->
+    <g stroke="#30363d" stroke-width="1">
+      <line x1="44" y1="0" x2="44" y2="400"/>
+      <line x1="88" y1="0" x2="88" y2="400"/>
+      <line x1="178" y1="0" x2="178" y2="400"/>
+      <line x1="222" y1="0" x2="222" y2="400"/>
+      <line x1="311" y1="0" x2="311" y2="400"/>
+      <line x1="355" y1="0" x2="355" y2="400"/>
+      <line x1="0" y1="44" x2="400" y2="44"/>
+      <line x1="0" y1="88" x2="400" y2="88"/>
+      <line x1="0" y1="178" x2="400" y2="178"/>
+      <line x1="0" y1="222" x2="400" y2="222"/>
+      <line x1="0" y1="311" x2="400" y2="311"/>
+      <line x1="0" y1="355" x2="400" y2="355"/>
+    </g>
+
+    <!-- Thick box lines -->
+    <g stroke="#58a6ff" stroke-width="2">
+      <line x1="133" y1="0" x2="133" y2="400"/>
+      <line x1="267" y1="0" x2="267" y2="400"/>
+      <line x1="0" y1="133" x2="400" y2="133"/>
+      <line x1="0" y1="267" x2="400" y2="267"/>
+    </g>
+
+    <!-- Sample numbers -->
+    <g font-family="Arial, sans-serif" font-size="28" font-weight="bold">
+      <!-- Fixed numbers (gray) -->
+      <text x="22" y="35" fill="#8b949e" text-anchor="middle">5</text>
+      <text x="66" y="35" fill="#8b949e" text-anchor="middle">3</text>
+      <text x="155" y="35" fill="#8b949e" text-anchor="middle">7</text>
+      <text x="22" y="79" fill="#8b949e" text-anchor="middle">6</text>
+      <text x="155" y="79" fill="#8b949e" text-anchor="middle">1</text>
+      <text x="199" y="79" fill="#8b949e" text-anchor="middle">9</text>
+      <text x="243" y="79" fill="#8b949e" text-anchor="middle">5</text>
+      <text x="66" y="123" fill="#8b949e" text-anchor="middle">9</text>
+      <text x="110" y="123" fill="#8b949e" text-anchor="middle">8</text>
+      <text x="333" y="123" fill="#8b949e" text-anchor="middle">6</text>
+      <text x="22" y="167" fill="#8b949e" text-anchor="middle">8</text>
+      <text x="155" y="167" fill="#8b949e" text-anchor="middle">6</text>
+      <text x="287" y="167" fill="#8b949e" text-anchor="middle">3</text>
+      <text x="22" y="211" fill="#8b949e" text-anchor="middle">4</text>
+      <text x="155" y="211" fill="#8b949e" text-anchor="middle">8</text>
+      <text x="243" y="211" fill="#8b949e" text-anchor="middle">3</text>
+      <text x="377" y="211" fill="#8b949e" text-anchor="middle">1</text>
+      <text x="110" y="255" fill="#8b949e" text-anchor="middle">7</text>
+      <text x="243" y="255" fill="#8b949e" text-anchor="middle">2</text>
+      <text x="377" y="255" fill="#8b949e" text-anchor="middle">6</text>
+
+      <!-- User input numbers (blue) -->
+      <text x="110" y="35" fill="#58a6ff" text-anchor="middle">4</text>
+      <text x="287" y="79" fill="#58a6ff" text-anchor="middle">2</text>
+      <text x="199" y="167" fill="#58a6ff" text-anchor="middle">7</text>
+      <text x="66" y="211" fill="#58a6ff" text-anchor="middle">5</text>
+    </g>
+  </g>
+
+  <!-- Logo -->
+  <g transform="translate(80, 180)">
+    <rect x="0" y="0" width="70" height="70" rx="12" fill="url(#accentGrad)" filter="url(#glow)"/>
+    <text x="35" y="52" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="#0d1117" text-anchor="middle">S</text>
+  </g>
+
+  <!-- Title -->
+  <text x="170" y="235" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f0f6fc" letter-spacing="4">SUDOKU</text>
+
+  <!-- Subtitle -->
+  <text x="80" y="290" font-family="Arial, sans-serif" font-size="24" fill="#8b949e">Free Online Puzzle Game</text>
+
+  <!-- Features -->
+  <g font-family="Arial, sans-serif" font-size="18" fill="#58a6ff">
+    <text x="80" y="370">3 Difficulty Levels</text>
+    <text x="80" y="400">Hints &amp; Notes Mode</text>
+    <text x="80" y="430">English / Shqip</text>
+  </g>
+
+  <!-- URL -->
+  <text x="80" y="530" font-family="Arial, sans-serif" font-size="20" fill="#6e7681">sudoku-estudios.vercel.app</text>
+</svg>
