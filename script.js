@@ -25,7 +25,25 @@ const translations = {
         medium: 'Medium',
         hard: 'Hard',
         newGame: 'New Game',
-        instructions: 'Use keyboard (1-9) or click numbers to play'
+        instructions: 'Use keyboard (1-9) or click numbers to play',
+        guest: 'Guest',
+        login: 'Login',
+        logout: 'Logout',
+        register: 'Register',
+        username: 'Username',
+        pin: 'PIN (4 digits)',
+        loginRegister: 'Login / Register',
+        leaderboard: 'Leaderboard',
+        rank: 'Rank',
+        player: 'Player',
+        date: 'Date',
+        noEntries: 'No entries yet. Be the first!',
+        wrongPin: 'Wrong PIN!',
+        userNotFound: 'User not found. Click Register to create account.',
+        userExists: 'Username already exists!',
+        invalidPin: 'PIN must be 4 digits',
+        registered: 'Registered successfully!',
+        viewLeaderboard: 'View Leaderboard'
     },
     al: {
         difficulty: 'Vështirësia',
@@ -45,7 +63,25 @@ const translations = {
         medium: 'Mesatar',
         hard: 'Vështirë',
         newGame: 'Lojë e Re',
-        instructions: 'Përdorni tastierën (1-9) ose klikoni numrat për të luajtur'
+        instructions: 'Përdorni tastierën (1-9) ose klikoni numrat për të luajtur',
+        guest: 'Vizitor',
+        login: 'Hyr',
+        logout: 'Dil',
+        register: 'Regjistrohu',
+        username: 'Emri',
+        pin: 'PIN (4 shifra)',
+        loginRegister: 'Hyr / Regjistrohu',
+        leaderboard: 'Renditja',
+        rank: 'Vendi',
+        player: 'Lojtari',
+        date: 'Data',
+        noEntries: 'Nuk ka ende. Behu i pari!',
+        wrongPin: 'PIN i gabuar!',
+        userNotFound: 'Përdoruesi nuk u gjet. Kliko Regjistrohu.',
+        userExists: 'Emri ekziston!',
+        invalidPin: 'PIN duhet te jete 4 shifra',
+        registered: 'U regjistruat me sukses!',
+        viewLeaderboard: 'Shiko Renditjen'
     }
 };
 
@@ -68,6 +104,11 @@ let history = [];
 let difficulty = 'easy';
 let isGameOver = false;
 let isGameWon = false;
+
+// User & Leaderboard State
+let currentUser = null; // { username }
+let users = {}; // { username: { pin } }
+let leaderboard = []; // [{ username, time, difficulty, date }]
 
 // Difficulty settings (number of cells to remove)
 const difficultyLevels = {
@@ -97,6 +138,25 @@ const playAgainBtn = document.getElementById('playAgainBtn');
 const tryAgainBtn = document.getElementById('tryAgainBtn');
 const winTime = document.getElementById('winTime');
 const winMistakes = document.getElementById('winMistakes');
+
+// User & Leaderboard DOM Elements
+const userDisplay = document.getElementById('userDisplay');
+const userNameSpan = document.getElementById('userName');
+const loginBtn = document.getElementById('loginBtn');
+const leaderboardBtn = document.getElementById('leaderboardBtn');
+const loginModal = document.getElementById('loginModal');
+const loginModalClose = document.getElementById('loginModalClose');
+const loginForm = document.getElementById('loginForm');
+const usernameInput = document.getElementById('usernameInput');
+const pinInput = document.getElementById('pinInput');
+const loginError = document.getElementById('loginError');
+const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+const registerBtn = document.getElementById('registerBtn');
+const leaderboardModal = document.getElementById('leaderboardModal');
+const leaderboardModalClose = document.getElementById('leaderboardModalClose');
+const leaderboardTable = document.getElementById('leaderboardTable');
+const leaderboardBody = document.getElementById('leaderboardBody');
+const leaderboardEmpty = document.getElementById('leaderboardEmpty');
 
 // ==========================================
 // SUDOKU GENERATOR & SOLVER
@@ -579,6 +639,12 @@ function winGame() {
     stopTimer();
     winTime.textContent = formatTime(timer);
     winMistakes.textContent = mistakes;
+
+    // Add to leaderboard if user is logged in
+    if (currentUser) {
+        addToLeaderboard(timer, difficulty);
+    }
+
     winOverlay.classList.add('active');
     createConfetti();
 }
@@ -733,6 +799,274 @@ function switchLanguage() {
     });
 
     updateDifficultyDisplay();
+    updateUserDisplay();
+}
+
+// ==========================================
+// USER & AUTHENTICATION
+// ==========================================
+
+/**
+ * Load users from localStorage
+ */
+function loadUsers() {
+    const stored = localStorage.getItem('sudoku_users');
+    if (stored) {
+        users = JSON.parse(stored);
+    }
+}
+
+/**
+ * Save users to localStorage
+ */
+function saveUsers() {
+    localStorage.setItem('sudoku_users', JSON.stringify(users));
+}
+
+/**
+ * Load current user from localStorage
+ */
+function loadCurrentUser() {
+    const stored = localStorage.getItem('sudoku_currentUser');
+    if (stored) {
+        currentUser = JSON.parse(stored);
+        updateUserDisplay();
+    }
+}
+
+/**
+ * Save current user to localStorage
+ */
+function saveCurrentUser() {
+    if (currentUser) {
+        localStorage.setItem('sudoku_currentUser', JSON.stringify(currentUser));
+    } else {
+        localStorage.removeItem('sudoku_currentUser');
+    }
+}
+
+/**
+ * Update user display in header
+ */
+function updateUserDisplay() {
+    const t = translations[currentLanguage];
+    if (currentUser) {
+        userNameSpan.textContent = currentUser.username;
+        userDisplay.classList.add('logged-in');
+        loginBtn.textContent = t.logout;
+        loginBtn.dataset.en = 'Logout';
+        loginBtn.dataset.al = 'Dil';
+    } else {
+        userNameSpan.textContent = t.guest;
+        userDisplay.classList.remove('logged-in');
+        loginBtn.textContent = t.login;
+        loginBtn.dataset.en = 'Login';
+        loginBtn.dataset.al = 'Hyr';
+    }
+}
+
+/**
+ * Show login modal
+ */
+function showLoginModal() {
+    loginModal.classList.add('active');
+    usernameInput.value = '';
+    pinInput.value = '';
+    loginError.textContent = '';
+    usernameInput.focus();
+}
+
+/**
+ * Hide login modal
+ */
+function hideLoginModal() {
+    loginModal.classList.remove('active');
+}
+
+/**
+ * Login user
+ */
+function login(username, pin) {
+    const t = translations[currentLanguage];
+
+    if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+        loginError.textContent = t.invalidPin;
+        return false;
+    }
+
+    if (!users[username]) {
+        loginError.textContent = t.userNotFound;
+        return false;
+    }
+
+    if (users[username].pin !== pin) {
+        loginError.textContent = t.wrongPin;
+        return false;
+    }
+
+    currentUser = { username };
+    saveCurrentUser();
+    updateUserDisplay();
+    hideLoginModal();
+    return true;
+}
+
+/**
+ * Register new user
+ */
+function registerUser(username, pin) {
+    const t = translations[currentLanguage];
+
+    if (!username.trim()) {
+        loginError.textContent = t.username + ' required';
+        return false;
+    }
+
+    if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+        loginError.textContent = t.invalidPin;
+        return false;
+    }
+
+    if (users[username]) {
+        loginError.textContent = t.userExists;
+        return false;
+    }
+
+    users[username] = { pin };
+    saveUsers();
+
+    currentUser = { username };
+    saveCurrentUser();
+    updateUserDisplay();
+    hideLoginModal();
+    return true;
+}
+
+/**
+ * Logout user
+ */
+function logout() {
+    currentUser = null;
+    saveCurrentUser();
+    updateUserDisplay();
+}
+
+/**
+ * Handle login button click
+ */
+function handleLoginClick() {
+    if (currentUser) {
+        logout();
+    } else {
+        showLoginModal();
+    }
+}
+
+// ==========================================
+// LEADERBOARD
+// ==========================================
+
+/**
+ * Load leaderboard from localStorage
+ */
+function loadLeaderboard() {
+    const stored = localStorage.getItem('sudoku_leaderboard');
+    if (stored) {
+        leaderboard = JSON.parse(stored);
+    }
+}
+
+/**
+ * Save leaderboard to localStorage
+ */
+function saveLeaderboard() {
+    localStorage.setItem('sudoku_leaderboard', JSON.stringify(leaderboard));
+}
+
+/**
+ * Add entry to leaderboard
+ */
+function addToLeaderboard(time, diff) {
+    if (!currentUser) return;
+
+    const entry = {
+        username: currentUser.username,
+        time: time,
+        difficulty: diff,
+        date: new Date().toISOString().split('T')[0]
+    };
+
+    leaderboard.push(entry);
+
+    // Sort by time (ascending) and keep top 10
+    leaderboard.sort((a, b) => a.time - b.time);
+    leaderboard = leaderboard.slice(0, 10);
+
+    saveLeaderboard();
+}
+
+/**
+ * Show leaderboard modal
+ */
+function showLeaderboardModal() {
+    renderLeaderboard();
+    leaderboardModal.classList.add('active');
+}
+
+/**
+ * Hide leaderboard modal
+ */
+function hideLeaderboardModal() {
+    leaderboardModal.classList.remove('active');
+}
+
+/**
+ * Render leaderboard table
+ */
+function renderLeaderboard() {
+    const t = translations[currentLanguage];
+    leaderboardBody.innerHTML = '';
+
+    if (leaderboard.length === 0) {
+        leaderboardTable.classList.add('empty');
+        leaderboardEmpty.style.display = 'block';
+        return;
+    }
+
+    leaderboardTable.classList.remove('empty');
+    leaderboardEmpty.style.display = 'none';
+
+    leaderboard.forEach((entry, index) => {
+        const row = document.createElement('tr');
+        if (index === 0) row.classList.add('rank-1');
+        if (index === 1) row.classList.add('rank-2');
+        if (index === 2) row.classList.add('rank-3');
+
+        const diffText = {
+            easy: t.easy,
+            medium: t.medium,
+            hard: t.hard
+        };
+
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${escapeHtml(entry.username)}</td>
+            <td>${formatTime(entry.time)}</td>
+            <td><span class="difficulty-badge ${entry.difficulty}">${diffText[entry.difficulty]}</span></td>
+            <td>${entry.date}</td>
+        `;
+
+        leaderboardBody.appendChild(row);
+    });
+}
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // ==========================================
@@ -758,6 +1092,38 @@ notesBtn.addEventListener('click', toggleNotesMode);
 // Hint button
 hintBtn.addEventListener('click', useHint);
 
+// Login button
+loginBtn.addEventListener('click', handleLoginClick);
+
+// Login modal close
+loginModalClose.addEventListener('click', hideLoginModal);
+
+// Login form submit (Login button)
+loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    login(usernameInput.value.trim(), pinInput.value);
+});
+
+// Register button
+registerBtn.addEventListener('click', () => {
+    registerUser(usernameInput.value.trim(), pinInput.value);
+});
+
+// Leaderboard button
+leaderboardBtn.addEventListener('click', showLeaderboardModal);
+
+// Leaderboard modal close
+leaderboardModalClose.addEventListener('click', hideLeaderboardModal);
+
+// Close modals on overlay click
+loginModal.addEventListener('click', (e) => {
+    if (e.target === loginModal) hideLoginModal();
+});
+
+leaderboardModal.addEventListener('click', (e) => {
+    if (e.target === leaderboardModal) hideLeaderboardModal();
+});
+
 // Number pad
 numberPad.addEventListener('click', (e) => {
     const btn = e.target.closest('.num-btn');
@@ -778,6 +1144,18 @@ document.querySelectorAll('.diff-btn').forEach(btn => {
 
 // Keyboard input
 document.addEventListener('keydown', (e) => {
+    // Close modals with Escape
+    if (e.key === 'Escape') {
+        hideLoginModal();
+        hideLeaderboardModal();
+        return;
+    }
+
+    // Don't process game inputs if modals are open
+    if (loginModal.classList.contains('active') || leaderboardModal.classList.contains('active')) {
+        return;
+    }
+
     if (isGameOver || isGameWon) return;
 
     if (e.key >= '1' && e.key <= '9') {
@@ -813,4 +1191,12 @@ document.addEventListener('keydown', (e) => {
 // ==========================================
 // INITIALIZE GAME
 // ==========================================
+
+// Load user data and leaderboard
+loadUsers();
+loadCurrentUser();
+loadLeaderboard();
+updateUserDisplay();
+
+// Start the game
 initGame();
